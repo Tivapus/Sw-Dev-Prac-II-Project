@@ -12,14 +12,14 @@ exports.createTicketing = async (req, res) => {
   const { event, ticketAmount } = req.body;
   const eventObj = await Event.findById(event);
   if (!eventObj) return res.status(404).json({ message: 'Event not found' });
-  const currentCount = await userTicketCount(req.user.id, event);
+  const currentCount = await userTicketCount(req.user._id, event);
   if (currentCount + ticketAmount > 5) {
     return res.status(400).json({ message: 'Cannot request more than 5 tickets per event' });
   }
   if (ticketAmount > eventObj.availableTicket) {
     return res.status(400).json({ message: 'Not enough tickets available' });
   }
-  const ticketing = await Ticketing.create({ user: req.user.id, event, ticketAmount });
+  const ticketing = await Ticketing.create({ user: req.user._id, event, ticketAmount });
   eventObj.availableTicket -= ticketAmount;
   await eventObj.save();
   res.status(201).json(ticketing);
@@ -28,7 +28,7 @@ exports.createTicketing = async (req, res) => {
 // Get ticketing requests (admin: all requests, member: own requests)
 exports.getTicketings = async (req, res) => {
   try {
-    let query = req.user.role === 'admin' ? {} : { user: req.user.id };
+    let query = req.user.role === 'admin' ? {} : { user: req.user._id };
     let populate = req.user.role === 'admin' ? ['user', 'event'] : ['event'];
     
     const ticketings = await Ticketing.find(query)
@@ -64,7 +64,7 @@ exports.getTicketing = async (req, res) => {
   try {
     let query = { _id: req.params.id };
     if (req.user.role !== 'admin') {
-      query.user = req.user.id;
+      query.user = req.user._id;
     }
 
     let populate = req.user.role === 'admin' ? ['user', 'event'] : ['event'];
@@ -106,7 +106,7 @@ exports.updateTicketing = async (req, res) => {
   try {
     let query = { _id: req.params.id };
     if (req.user.role !== 'admin') {
-      query.user = req.user.id;
+      query.user = req.user._id;
     }
 
     const ticketing = await Ticketing.findOne(query);
@@ -126,7 +126,7 @@ exports.updateTicketing = async (req, res) => {
 
     // Check ticket limit for members
     if (req.user.role !== 'admin') {
-      const currentCount = await userTicketCount(req.user.id, ticketing.event);
+      const currentCount = await userTicketCount(req.user._id, ticketing.event);
       if (currentCount - ticketing.ticketAmount + ticketAmount > 5) {
         return res.status(400).json({
           success: false,
@@ -166,7 +166,7 @@ exports.deleteTicketing = async (req, res) => {
   try {
     let query = { _id: req.params.id };
     if (req.user.role !== 'admin') {
-      query.user = req.user.id;
+      query.user = req.user._id;
     }
 
     const ticketing = await Ticketing.findOne(query);
