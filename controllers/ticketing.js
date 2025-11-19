@@ -34,7 +34,7 @@ exports.getTicketings = async (req, res) => {
     const ticketings = await Ticketing.find(query)
       .populate(populate)
       .sort({ createdAt: -1 }); // Sort by newest first
-    
+    console.log("🔥 TICKETINGS RAW:", ticketings);
     res.status(200).json({
       success: true,
       count: ticketings.length,
