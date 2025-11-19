@@ -1,4 +1,5 @@
 const Event = require('../models/Event');
+const Ticketing = require('../models/Ticketing');
 const dayjs = require('dayjs');
 
 // @desc    Get all events
@@ -75,7 +76,13 @@ exports.updateEvent = async (req, res) => {
 // @route   DELETE /api/v1/events/:id
 // @access  Admin
 exports.deleteEvent = async (req, res) => {
-  const event = await Event.findByIdAndDelete(req.params.id);
-  if (!event) return res.status(404).json({ message: 'Event not found' });
-  res.json({ message: 'Event deleted' });
+  const event = await Event.findById(req.params.id);
+  if (!event) {
+    return res.status(404).json({ message: 'Event not found' });
+  }
+  // Delete all ticketings referencing this event
+  await Ticketing.deleteMany({ event: event._id });
+  // Now delete the event
+  await event.deleteOne();
+  res.json({ message: 'Event and related ticketings deleted' });
 };
